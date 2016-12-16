@@ -1,0 +1,113 @@
+
+TO Compile - cc -O soc.c -o soc -lpthread
+
+ie pass  -lpthread as a argument. 
+
+
+
+Members: 									
+
+sahildua@buffalo.edu						
+asingh42@buffalo.edu						
+vcheng3@buffalo.edu							
+
+
+
+b. The data structures you used for the implementation of the queuing, scheduling,
+multithreading and synchronization components of the server
+
+Queueing - A standard queue like data structure with a head pointer on the first request and all incoming requests are added at the tail.
+An incoming request is added to the head pointer as per the arrival order. 
+That is the head always points to the oldest arrived request. 
+
+Scheduling - If following the default FCFS policy, requests are extracted from the head of the ready queue as they are in the order of arrival. 
+If the policy is SJF first - the scheduler traverses the queue to search for the smallest job in terms of file size ( which was captured by the listening thread on arrival), 
+and swaps the smallest job with the head. Rest of the operations remain same. 
+
+Multithreading is implemented by creating and initializing three kinds of threads at the start of the main process of the server. 
+The listening thread runs in an infinite loop to listen to multiple connections on a listening socket. The scheduler threads also runs continuously to check for the ready queue and waits if the ready queue is empty. It picks a request from the ready queue and makes it availabe via a shared request node to the worker threads. The worker threads can pick multiple requests at a time as there are more than one. 
+
+Synchronization is implemented with two types of mutexs and a conditional variable among three types of threads(explained below.)
+
+
+Shared Variables - Ready Queue and one Queue Node 
+ 
+
+Server / Listening Thread 
+===============
+accept connection 
+fork 
+	In child process - 
+	read attributes 
+	create local queue data structure 
+
+	wait Q 
+	add tail to Q  
+	signal Q 
+	
+	In parent process - 
+	keep accepting new requests. 
+
+==================
+
+Scheduler Thread
+sleep(sleep time)
+
+	Lock Q 
+	read head 
+	remove from ready Q
+	Unlock Q  
+	
+	Lock SharedNode 
+		assign head - read above to sharedNode
+	Unlock sharedNode 
+	
+	condition Variable to true. 
+
+====================
+Worker Thread
+
+	wait for condition be true // not a lock - so no hold and wait. 
+	//to avoid unnecessary race when the scheduler is in its queuing time. 
+	
+	Lock sharedNode 
+		copy sharedNode to local variable 
+	Unlock sharedNode 
+		
+	read file from directory 
+	send all contents to client 
+==============
+handle other variables and flag and boundary conditions as required. 
+
+
+	  
+
+c. How are context switches between threads implemented in your code?
+
+Context switching - Once connected - the listening thread forks and the remaining code runs in the child proceess so that the listening port is free to listen to other incoming connections. Main thread creates the three types of threads on start and Join on other threads. 
+Mutexes help one thread to wait and other to process accordingly. 
+
+d. How are your race conditions avoided in your code?
+
+The initial race condition is avoided by a conditional variable using a similar approach of pthread conditional variables. 
+This to avoid the unecesssary race at the beginning when the scheduler has not applied its policy - queuing time. 
+Other race conditions are avoided using mutexs around the shared variables in the same order among the three threads -  total ordering. 
+
+
+e. Briefly critique your design, pointing out advantages and disadvantages in your
+design choices.
+
+All three threads are running continuosly - only wait when the queue is empty or the scheduler is taking queueing time. 
+There is a new child process created every time a new client connects to keep the listening on the same socket live. Even though
+parent process gets free from parsing a new request - there is overhead of fork. Condition variables are also designed around some sort 
+of busy waiting. The design is kept simplistic in terms of extracting the shortes job - can be a more efficient algorithm like a heap 
+at the cost of complexity. This design was chosen keeping in mind the ratio of the total number of requests at any time to the number of worker threads. 
+
+
+
+f. Please cite any online or offline resources you consulted while preparing your
+project, other than the course materials.
+
+A post on getting ip address string from an accepted socket. 
+http://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c 
+http://linux.die.net/man/2/stat
