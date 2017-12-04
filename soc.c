@@ -1,14 +1,14 @@
 
 
-#include	<stdio.h>
-#include	<stdlib.h>
-#include	<string.h>
-#include	<ctype.h>
-#include	<sys/types.h>
-#include	<sys/socket.h>
-#include	<netdb.h>
-#include	<netinet/in.h>
-#include	<inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <inttypes.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/stat.h>
